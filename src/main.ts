@@ -52,6 +52,25 @@ export default class GitHubSyncPlugin extends Plugin {
 		this.addCommand({ id: "show-changes", name: "Show changes", icon: "list", callback: () => this.showChanges() });
 		this.addCommand({ id: "resolve-conflicts", name: "Resolve conflicts", icon: "git-merge", callback: () => this.openConflicts() });
 		this.addCommand({
+			id: "resolve-all-keep-both",
+			name: "Resolve all conflicts: keep both versions",
+			icon: "copy",
+			callback: async () => {
+				await this.loadState();
+				if (!this.state?.conflicts.length) {
+					new Notice("GitHub: конфликтов нет.");
+					return;
+				}
+				const copies = await this.run("сохранение обеих версий", "manual", (e) =>
+					e.resolveAllKeepBoth(`${this.deviceName} conflict ${formatDate(new Date())}`),
+				);
+				if (copies) {
+					new Notice(`Сохранено копий: ${copies.length}. Теперь нажмите Sync.`, 8000);
+					this.conflictHost().afterResolve();
+				}
+			},
+		});
+		this.addCommand({
 			id: "mark-resolved",
 			name: "Mark file as resolved",
 			icon: "check",
@@ -161,12 +180,14 @@ export default class GitHubSyncPlugin extends Plugin {
 		}
 	}
 
+	private get deviceName(): string {
+		return this.settings.deviceName || (Platform.isIosApp ? "iOS" : Platform.isAndroidApp ? "Android" : "desktop");
+	}
+
 	private commitMessage(changes: LocalChange[], template = this.settings.commitTemplate): string {
-		const device =
-			this.settings.deviceName || (Platform.isIosApp ? "iOS" : Platform.isAndroidApp ? "Android" : "desktop");
 		return template
 			.replace(/{{date}}/g, `${formatDate(new Date())} ${formatTime(new Date())}`)
-			.replace(/{{device}}/g, device)
+			.replace(/{{device}}/g, this.deviceName)
 			.replace(/{{count}}/g, String(changes.length));
 	}
 
@@ -278,6 +299,8 @@ export default class GitHubSyncPlugin extends Plugin {
 			resolve: (path, content) => withEngine((e) => e.resolveConflict(path, content)),
 			writeFile: (path, content) => new ObsidianVaultIO(this.app).write(path, content),
 			writeMarkers: (path) => withEngine((e) => e.writeMarkers(path)),
+			resolveAllKeepBoth: () =>
+				withEngine((e) => e.resolveAllKeepBoth(`${this.deviceName} conflict ${formatDate(new Date())}`)),
 			openFile: async (path) => {
 				const file = this.app.vault.getAbstractFileByPath(path);
 				if (file instanceof TFile) await this.app.workspace.getLeaf(false).openFile(file);

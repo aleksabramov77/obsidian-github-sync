@@ -154,6 +154,29 @@ describe("SyncEngine", () => {
 		expect(phone.snapshot()).toEqual({ "a.md": "A-remote", "b.md": "B-local" });
 	});
 
+	it("resolves all conflicts by keeping both versions", async () => {
+		await gh.commitFiles({ "n.md": "base", "gone-here.md": "G", "gone-there.md": "T" });
+		const engine = makeEngine(gh, phone, state);
+		await engine.sync(msg);
+		await gh.commitFiles({ "n.md": "remote", "gone-here.md": "G2", "gone-there.md": null });
+		phone.set("n.md", "local");
+		await phone.remove("gone-here.md");
+		phone.set("gone-there.md", "T2");
+		expect((await engine.pull()).conflicts).toHaveLength(3);
+
+		const copies = await engine.resolveAllKeepBoth("iPhone conflict 2026-10-09");
+		expect(copies).toEqual(["n (iPhone conflict 2026-10-09).md"]);
+		expect(state.conflicts).toEqual([]);
+		await engine.sync(msg);
+		expect(gh.files()).toEqual({
+			"n.md": "remote",
+			"n (iPhone conflict 2026-10-09).md": "local",
+			"gone-here.md": "G2",
+			"gone-there.md": "T2",
+		});
+		expect(phone.snapshot()).toEqual(gh.files());
+	});
+
 	it("refuses to push when GitHub moved on since the last pull", async () => {
 		await gh.commitFiles({ "a.md": "A" });
 		const engine = makeEngine(gh, phone, state);
