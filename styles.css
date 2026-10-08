@@ -1,0 +1,210 @@
+/* GitHub Sync (Mobile) */
+
+.ghsync-modal {
+	max-width: min(760px, 100vw);
+}
+
+.ghsync-muted {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	margin: 4px 0 8px;
+}
+
+.ghsync-error {
+	color: var(--text-error);
+}
+
+.ghsync-hidden {
+	display: none !important;
+}
+
+.ghsync-spinning svg {
+	animation: ghsync-spin 1s linear infinite;
+}
+
+@keyframes ghsync-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.ghsync-statusbar {
+	cursor: pointer;
+}
+
+/* Change list */
+.ghsync-change-list {
+	max-height: 40vh;
+	overflow-y: auto;
+	margin-bottom: 12px;
+}
+
+.ghsync-change-row {
+	display: flex;
+	gap: 8px;
+	align-items: baseline;
+	padding: 4px 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+	font-size: var(--font-ui-small);
+	word-break: break-all;
+}
+
+.ghsync-badge {
+	flex: none;
+	font-family: var(--font-monospace);
+	font-weight: 600;
+	width: 1.4em;
+	text-align: center;
+	border-radius: 4px;
+}
+
+.ghsync-badge-added {
+	color: var(--color-green);
+}
+
+.ghsync-badge-modified {
+	color: var(--color-yellow);
+}
+
+.ghsync-badge-deleted {
+	color: var(--color-red);
+}
+
+.ghsync-commit-message,
+.ghsync-result {
+	width: 100%;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-small);
+}
+
+/* Conflict list */
+.ghsync-conflict-item {
+	padding: 10px 12px;
+	margin: 6px 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+.ghsync-conflict-item:hover,
+.ghsync-conflict-item:active {
+	background: var(--background-modifier-hover);
+}
+
+.ghsync-conflict-path {
+	font-weight: 600;
+	word-break: break-all;
+}
+
+.ghsync-conflict-row {
+	color: var(--text-error);
+}
+
+/* Resolver */
+.ghsync-toolbar,
+.ghsync-footer {
+	border-top: none;
+	flex-wrap: wrap;
+}
+
+.ghsync-toolbar .setting-item-control,
+.ghsync-footer .setting-item-control {
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 6px;
+}
+
+.ghsync-footer {
+	position: sticky;
+	bottom: 0;
+	background: var(--modal-background, var(--background-primary));
+	padding-bottom: calc(8px + env(safe-area-inset-bottom));
+}
+
+.ghsync-pre {
+	white-space: pre-wrap;
+	word-break: break-word;
+	font-size: var(--font-ui-small);
+	padding: 6px 8px;
+	margin: 0 0 6px;
+	border-radius: 6px;
+	background: var(--background-secondary);
+	max-height: 40vh;
+	overflow-y: auto;
+}
+
+.ghsync-pre-ok {
+	color: var(--text-muted);
+}
+
+.ghsync-ok-chunk summary {
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	cursor: pointer;
+	padding: 4px 0;
+}
+
+.ghsync-conflict-card {
+	border: 2px solid var(--color-orange);
+	border-radius: 10px;
+	padding: 8px;
+	margin: 10px 0;
+	scroll-margin-top: 12px;
+}
+
+.ghsync-conflict-card.is-resolved {
+	border-color: var(--color-green);
+}
+
+.ghsync-conflict-header {
+	display: flex;
+	justify-content: space-between;
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.ghsync-status {
+	font-weight: normal;
+	font-size: var(--font-ui-small);
+	color: var(--color-orange);
+}
+
+.is-resolved .ghsync-status {
+	color: var(--color-green);
+}
+
+.ghsync-side-label {
+	font-size: var(--font-ui-smaller);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	margin-top: 4px;
+}
+
+.ghsync-side-local {
+	color: var(--color-blue);
+}
+
+.ghsync-side-remote {
+	color: var(--color-purple);
+}
+
+.ghsync-pre-local {
+	border-left: 3px solid var(--color-blue);
+}
+
+.ghsync-pre-remote {
+	border-left: 3px solid var(--color-purple);
+}
+
+.ghsync-choice-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 6px;
+}
+
+.ghsync-choice-buttons button {
+	flex: 1 1 auto;
+	min-height: 40px;
+}
