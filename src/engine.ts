@@ -84,6 +84,22 @@ interface RemoteSnapshot {
 	files: Map<string, RemoteEntry>;
 }
 
+/** `dir/note.md` → `dir/note (<label>).md`, adding a counter if that name is taken. */
+export async function conflictCopyPath(
+	path: string,
+	label: string,
+	exists: (p: string) => Promise<boolean>,
+): Promise<string> {
+	const slash = path.lastIndexOf("/");
+	const dot = path.lastIndexOf(".");
+	const hasExt = dot > slash + 1;
+	const stem = hasExt ? path.slice(0, dot) : path;
+	const ext = hasExt ? path.slice(dot) : "";
+	let candidate = `${stem} (${label})${ext}`;
+	for (let i = 2; await exists(candidate); i++) candidate = `${stem} (${label} ${i})${ext}`;
+	return candidate;
+}
+
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
 	const out: R[] = new Array(items.length);
 	let next = 0;
@@ -354,6 +370,29 @@ export class SyncEngine {
 		else delete this.state.baseFiles[path];
 		this.state.conflicts = this.state.conflicts.filter((x) => x.path !== path);
 		await this.saveState(this.state);
+	}
+
+	/**
+	 * Resolves every conflict without losing anything: the GitHub version stays at the
+	 * original path and this device's version is saved next to it as a copy.
+	 * Deletions are undone in favour of the side that still has the file.
+	 * Returns the paths of the created copies.
+	 */
+	async resolveAllKeepBoth(copyLabel: string): Promise<string[]> {
+		const copies: string[] = [];
+		for (const c of [...this.state.conflicts]) {
+			this.onProgress(`Конфликты: ${c.path}`);
+			const sides = await this.loadConflictSides(c);
+			if (sides.local && sides.remote) {
+				const path = await conflictCopyPath(c.path, copyLabel, (p) => this.io.exists(p));
+				await this.io.write(path, sides.local);
+				copies.push(path);
+				await this.resolveConflict(c.path, sides.remote);
+			} else {
+				await this.resolveConflict(c.path, sides.local ?? sides.remote ?? null);
+			}
+		}
+		return copies;
 	}
 
 	/** Writes conflict markers for a text conflict so it can be fixed in the editor. */

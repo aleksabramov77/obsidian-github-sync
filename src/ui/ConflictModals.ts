@@ -10,6 +10,8 @@ export interface ConflictHost {
 	writeFile(path: string, content: Uint8Array): Promise<void>;
 	writeMarkers(path: string): Promise<void>;
 	openFile(path: string): Promise<void>;
+	/** Keeps both versions of every conflict; returns the created copies. */
+	resolveAllKeepBoth(): Promise<string[]>;
 	/** Called after every resolution; e.g. offers to push when nothing is left. */
 	afterResolve(): void;
 }
@@ -56,6 +58,25 @@ export class ConflictListModal extends Modal {
 			cls: "ghsync-muted",
 			text: "Нажмите на файл, чтобы выбрать, какую версию оставить. Push станет доступен после разрешения всех конфликтов.",
 		});
+		new Setting(contentEl)
+			.setName("Сохранить обе версии для всех")
+			.setDesc("На месте файла останется версия с GitHub, а версия с этого устройства сохранится рядом копией. Ничего не теряется — объединить можно потом.")
+			.addButton((b) =>
+				b
+					.setButtonText("Сохранить обе")
+					.setCta()
+					.onClick(async () => {
+						b.setDisabled(true).setButtonText("Сохраняю…");
+						try {
+							const copies = await this.host.resolveAllKeepBoth();
+							new Notice(`Сохранено копий: ${copies.length}. Теперь нажмите Sync.`, 8000);
+							this.host.afterResolve();
+						} catch (e) {
+							new Notice(`Ошибка: ${(e as Error).message}`, 8000);
+						}
+						this.render();
+					}),
+			);
 		for (const c of conflicts) {
 			const row = contentEl.createDiv({ cls: "ghsync-conflict-item" });
 			row.createDiv({ cls: "ghsync-conflict-path", text: c.path });
