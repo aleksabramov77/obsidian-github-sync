@@ -1,6 +1,6 @@
 {
   "name": "obsidian-github-sync-mobile",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Sync an Obsidian vault with GitHub via REST API (works on iOS): commit & push, pull, conflict resolution.",
   "main": "main.js",
   "private": true,
