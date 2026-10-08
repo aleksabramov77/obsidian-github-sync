@@ -63,7 +63,8 @@ export class GitHubSyncSettingTab extends PluginSettingTab {
 				t.setPlaceholder("github_pat_…")
 					.setValue(s.token)
 					.onChange(async (v) => {
-						s.token = v.trim();
+						// Pasting on iOS can bring along spaces or line breaks.
+						s.token = v.replace(/\s+/g, "");
 						await save();
 					});
 			});
@@ -108,6 +109,7 @@ export class GitHubSyncSettingTab extends PluginSettingTab {
 					const info = await this.plugin.makeApi().checkAccess();
 					new Notice(
 						`✅ ${info.fullName}${info.private ? " (private)" : ""}\n` +
+							`Токен: ${info.tokenOwner}\n` +
 							(info.canPush ? "Запись разрешена." : "⚠️ Нет прав на запись!") +
 							`\nВетка по умолчанию: ${info.defaultBranch}`,
 						8000,

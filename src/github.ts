@@ -127,10 +127,37 @@ export class RestGitHubApi implements GitHubApi {
 		throw new GitHubError(`GitHub: ${what} — ${status} ${msg}${hint}`, status);
 	}
 
-	async checkAccess(): Promise<{ fullName: string; private: boolean; canPush: boolean; defaultBranch: string }> {
-		const { status, data } = await this.call<any>("GET", "");
+	/** Login of the account the token belongs to. */
+	async tokenOwner(): Promise<string> {
+		const { status, data } = await this.call<any>("GET", `https://api.github.com/user?t=${Date.now()}`);
+		if (status === 401) {
+			throw new GitHubError("Токен недействителен (401). Скопируйте его заново целиком — он начинается с github_pat_.", 401);
+		}
+		if (status !== 200) this.fail("проверка токена", status, data);
+		return data.login;
+	}
+
+	async checkAccess(): Promise<{
+		fullName: string;
+		private: boolean;
+		canPush: boolean;
+		defaultBranch: string;
+		tokenOwner: string;
+	}> {
+		const login = await this.tokenOwner();
+		// Cache-busting query param: an earlier 404 must not be served from the HTTP cache.
+		const { status, data } = await this.call<any>("GET", `?t=${Date.now()}`);
+		if (status === 404) {
+			const repo = `${this.cfg.owner}/${this.cfg.repo}`;
+			const why =
+				login.toLowerCase() !== this.cfg.owner.toLowerCase()
+					? `Токен создан под аккаунтом «${login}», а репозиторий принадлежит «${this.cfg.owner}». Создайте токен, войдя на GitHub как ${this.cfg.owner}.`
+					: `Токен аккаунта «${login}» не видит ${repo}. Проверьте название репозитория и в настройках токена: Repository access → Only select repositories → ${this.cfg.repo}.`;
+			throw new GitHubError(`GitHub: 404 для ${repo}. ${why}`, 404);
+		}
 		if (status !== 200) this.fail("доступ к репозиторию", status, data);
 		return {
+			tokenOwner: login,
 			fullName: data.full_name,
 			private: data.private,
 			canPush: !!data.permissions?.push,
@@ -148,7 +175,7 @@ export class RestGitHubApi implements GitHubApi {
 		if (status === 409) return { kind: "empty" };
 		if (status === 404) {
 			// Distinguish "no such branch" from "no such repo".
-			const repo = await this.call<any>("GET", "");
+			const repo = await this.call<any>("GET", `?t=${Date.now()}`);
 			if (repo.status === 200) return { kind: "missing" };
 			this.fail("доступ к репозиторию", repo.status, repo.data);
 		}
